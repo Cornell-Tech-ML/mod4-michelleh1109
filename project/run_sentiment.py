@@ -61,7 +61,15 @@ class CNNSentimentKim(minitorch.Module):
         super().__init__()
         self.feature_map_size = feature_map_size
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.dropout = dropout
+        self.conv1 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[0])
+        self.conv2 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[1])
+        self.conv3 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[2])
+
+        self.linear = Linear(feature_map_size, 1)
+        
+
+       
 
     def forward(self, embeddings):
         """
@@ -79,7 +87,7 @@ class CNNSentimentKim(minitorch.Module):
         h = minitorch.dropout(h, self.dropout)
 
         output = h.sigmoid().view(h.shape[0])
-        
+
         return output
 
 # Evaluation helper methods
