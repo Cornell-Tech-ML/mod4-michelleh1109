@@ -35,21 +35,7 @@ class Conv1d(minitorch.Module):
 
     def forward(self, input):
         # TODO: Implement for Task 4.5.
-       batch_size, in_channels, width = x.shape
-        kernel_width = self.weights.value.shape[2]
-
-        # Compute output size
-        out_width = width - kernel_width + 1
-        out = minitorch.zeros((batch_size, self.weights.value.shape[0], out_width))
-
-        # Convolution operation
-        for i in range(out_width):
-            # Extract segment
-            segment = x[:, :, i:i + kernel_width]
-            # Perform convolution
-            out[:, :, i] = (segment * self.weights.value).sum(dim=[1, 2])
-
-        return out + self.bias.value.view(1, -1, 1)
+       return minitorch.conv1d(input, self.weights.value) + self.bias.value
 
 class CNNSentimentKim(minitorch.Module):
     """
@@ -84,15 +70,17 @@ class CNNSentimentKim(minitorch.Module):
         # TODO: Implement for Task 4.5.
         x = embeddings.permute(0, 2, 1)
 
-        x1 = self.conv1.forward(x).relu()
-        x2 = self.conv2.forward(x).relu()
-        x3 = self.conv3.forward(x).relu()
+        l1 = self.conv1.forward(x).relu()
+        l2 = self.conv2.forward(x).relu()
+        l3 = self.conv3.forward(x).relu()
 
-        h = minitorch.max(x1, 2) + minitorch.max(x2, 2) + minitorch.max(x3, 2)
+        h = minitorch.max(l1, 2) + minitorch.max(l2, 2) + minitorch.max(l3, 2)
         h = self.linear.forward(h.view(h.shape[0], self.feature_map_size))
         h = minitorch.dropout(h, self.dropout)
 
-        return h.sigmoid().view(h.shape[0])
+        output = h.sigmoid().view(h.shape[0])
+        
+        return output
 
 # Evaluation helper methods
 def get_predictions_array(y_true, model_output):

@@ -107,18 +107,16 @@ class Network(minitorch.Module):
         self.out = x  
         
         # Apply max pooling
-        x = minitorch.maxpool2d(x, (4, 4))
-
-        # Flatten the output
-        x = x.view(x.shape[0], -1)
+        pool = minitorch.maxpool2d(x, (4, 4))
+        flattened = pool.view(pool.shape[0], -1)
 
         # Apply fully connected layer, ReLU, and dropout
-        x = self.linear1.forward(x).relu()
-        x = minitorch.dropout(x, 0.25)
+        hidden_l = self.linear1.forward(flattened).relu()
+        hidden_l = minitorch.dropout(x, 0.25)
 
         # Apply output layer and log softmax
-        x = self.linear2.forward(x)
-        return minitorch.logsoftmax(x, 1)
+        class_logits = self.linear2.forward(hidden_l)
+        return minitorch.logsoftmax(class_logits, 1)
 
 def make_mnist(start, stop):
     ys = []
