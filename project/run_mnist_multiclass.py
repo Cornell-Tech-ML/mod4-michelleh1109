@@ -55,7 +55,7 @@ class Conv2d(minitorch.Module):
                 Output tensor after 2D convolution.
         """
         return minitorch.conv2d(input, self.weights.value) + self.bias.value
-        
+
 class Network(minitorch.Module):
     """
     Implement a CNN for MNist classification based on LeNet.
@@ -100,12 +100,12 @@ class Network(minitorch.Module):
         """
         # Apply first convolution and ReLU
         x = self.conv1.forward(x).relu()
-        self.mid = x 
+        self.mid = x
 
         # Apply second convolution and ReLU
         x = self.conv2.forward(x).relu()
-        self.out = x  
-        
+        self.out = x
+
         # Apply max pooling
         pool = minitorch.maxpool2d(x, (4, 4))
         flattened = pool.view(pool.shape[0], 392)

@@ -67,9 +67,9 @@ class CNNSentimentKim(minitorch.Module):
         self.conv3 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[2])
 
         self.linear = Linear(feature_map_size, 1)
-        
 
-       
+
+
 
     def forward(self, embeddings):
         """

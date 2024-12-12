@@ -49,7 +49,7 @@ class Linear(minitorch.Module):
         batch = x.shape[0]
         input = x.shape[1]
         return x.view(batch, in_size) @ self.weights.value + self.bias.value
-  
+
 class FastTrain:
     def __init__(self, hidden_layers, backend=FastTensorBackend):
         self.hidden_layers = hidden_layers

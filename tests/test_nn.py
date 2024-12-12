@@ -56,9 +56,8 @@ def test_max(t: Tensor) -> None:
                 t[tuple(idx[:dim]) + (j,) + tuple(idx[dim + 1 :])]
                 for j in range(t.shape[dim])
             )
-            assert_close(
-                out[idx], manual_max
-            )
+            assert_close(out[idx], manual_max)
+
 
 @pytest.mark.task4_4
 @given(tensors(shape=(1, 1, 4, 4)))
