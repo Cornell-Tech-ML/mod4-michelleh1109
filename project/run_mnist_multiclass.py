@@ -108,7 +108,7 @@ class Network(minitorch.Module):
         
         # Apply max pooling
         pool = minitorch.maxpool2d(x, (4, 4))
-        flattened = pool.view(pool.shape[0], -1)
+        flattened = pool.view(pool.shape[0], 392)
 
         # Apply fully connected layer, ReLU, and dropout
         hidden_l = self.linear1.forward(flattened).relu()
