@@ -32,7 +32,31 @@ def test_avg(t: Tensor) -> None:
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    """
+    Test the max function across all dimensions.
+
+    Parameters:
+    ----------
+        t : Tensor
+            Randomly generated input tensor with a shape of (2, 3, 4).
+    """
+    # Iterate through all dimensions of the tensor
+    for dim in range(len(t.shape)):
+        # Compute max along the specified dimension
+        out = minitorch.max(t, dim)
+
+        # Validate output shape
+        expected_shape = tuple(t.shape[:dim]) + (1,) + tuple(t.shape[dim + 1 :])
+        assert out.shape == expected_shape, f"Output shape mismatch for dim={dim}."
+
+        # Validate output values
+        for idx in out._tensor.indices():
+            # Manually compute max along `dim` for the current index
+            manual_max = max(
+                t[tuple(idx[:dim]) + (j,) + tuple(idx[dim + 1 :])]
+                for j in range(t.shape[dim])
+            )
+            assert_close(out[idx], manual_max)
 
 
 @pytest.mark.task4_4

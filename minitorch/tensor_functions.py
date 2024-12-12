@@ -66,21 +66,69 @@ class Function:
 class Neg(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the negation function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            t1: the input tensor to the negation function.
+
+        Returns:
+        -------
+            The result of the negation function $-a$.
+
+        """
         return t1.f.neg_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the negation function.
+
+        Args:
+        ----
+            ctx: context object containing saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            The gradient with respect to the input.
+
+        """
         return grad_output.f.neg_map(grad_output)
 
 
 class Inv(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the inverse function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            t1: the input tensor to the inverse function.
+
+        Returns:
+        -------
+            The result of the inverse function $1/a$.
+
+        """
         ctx.save_for_backward(t1)
         return t1.f.inv_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the inverse function.
+
+        Args:
+        ----
+            ctx: context object containing saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            The gradient with respect to both inputs.
+
+        """
         (t1,) = ctx.saved_values
         return grad_output.f.inv_back_zip(t1, grad_output)
 
@@ -88,10 +136,35 @@ class Inv(Function):
 class Add(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
+        """Performs the forward pass of the addition function.
+
+        Args:
+        ----
+            ctx: context object to store any values for backward pass.
+            t1: the first input tensor to the addition function.
+            t2: the second input tensor to the addition function.
+
+        Returns:
+        -------
+            The result of the addition $a + b$.
+
+        """
         return t1.f.add_zip(t1, t2)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Performs the backward pass of the addition function.
+
+        Args:
+        ----
+            ctx: the context object containing saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containing the gradients with respect to both inputs.
+
+        """
         return grad_output, grad_output
 
 
@@ -105,11 +178,382 @@ class All(Function):
             return a.f.mul_reduce(a.contiguous().view(int(operators.prod(a.shape))), 0)
 
 
+class Mul(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
+        """Performs the forward pass of the multiplication function.
+
+        Args:
+        ----
+            ctx: context object to store any values for backward pass.
+            a: the first input tensor to the multiplication function.
+            b: the second input tensor to the multiplication function.
+
+        Returns:
+        -------
+            The result of the multiplication $a * b$.
+
+        """
+        ctx.save_for_backward(a, b)
+        return a.f.mul_zip(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Performs the backward pass of the multiplication function.
+
+        Args:
+        ----
+            ctx: context object containing saved values fromm the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containing the gradients with respect to both inputs.
+
+        """
+        a, b = ctx.saved_values
+        return (
+            grad_output.f.mul_zip(b, grad_output),
+            grad_output.f.mul_zip(a, grad_output),
+        )
+
+
+class Sigmoid(Function):
+    @staticmethod
+    def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the sigmoid function.
+
+        Args:
+        ----
+            ctx: context obeject to store any values for the backward pass.
+            t1: the input tensor to the sigmoid function.
+
+        Returns:
+        -------
+            The result of the sigmoid function $sigmoid(a)$.
+
+        """
+        out = t1.f.sigmoid_map(t1)
+        ctx.save_for_backward(out)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the sigmoid function.
+
+        Args:
+        ----
+            ctx: context object containing the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            The gradient with respect to the input.
+
+        """
+        sigma: Tensor = ctx.saved_values[0]
+        return sigma * (-sigma + 1.0) * grad_output
+
+
+class ReLU(Function):
+    @staticmethod
+    def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the relu function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            t1: the input tensor to the relu function.
+
+        Returns:
+        -------
+            The result of the relu function $relu(a)$.
+
+        """
+        ctx.save_for_backward(t1)
+        return t1.f.relu_map(t1)
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the relu function.
+
+        Args:
+        ----
+            ctx: context object containing the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            The gradient with respect to the input.
+
+        """
+        (a,) = ctx.saved_values
+        return grad_output.f.relu_back_zip(a, grad_output)
+
+
+class Log(Function):
+    @staticmethod
+    def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the log function.
+
+        Args:
+        ----
+            ctx: context object to store any values for backward pass.
+            t1: the input tensor to the log function.
+
+        Returns:
+        -------
+            The result of the log function $log(a)$.
+
+        """
+        ctx.save_for_backward(t1)
+        out = t1.f.log_map(t1)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the log function.
+
+        Args:
+        ----
+            ctx: context object containing saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            The gradient with respect to both inputs.
+
+        """
+        (a,) = ctx.saved_values
+        return grad_output.f.log_back_zip(a, grad_output)
+
+
+class Exp(Function):
+    @staticmethod
+    def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Performs the forward pass of the exponential function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            t1: the input tensor to the exponential function.
+
+        Returns:
+        -------
+            The result of the exponential function $exp(a)$.
+
+        """
+        out = t1.f.exp_map(t1)
+        ctx.save_for_backward(out)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Performs the backward pass of the exponential function.
+
+        Args:
+        ----
+            ctx: context object containg the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            THe gradient with respect to the input.
+
+        """
+        (a,) = ctx.saved_values
+        return grad_output.f.mul_zip(a, grad_output)
+
+
+class LT(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
+        """Performs the forward pass of the less than function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the first input tensor to the less than function.
+            b: the second input tensor to the less than function.
+
+        Returns:
+        -------
+            The result of the less than function $a < b$.
+
+        """
+        ctx.save_for_backward(a.shape, b.shape)
+        return a.f.lt_zip(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Performs the backward pass of the less than function.
+
+        Args:
+        ----
+            ctx: context object containing the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containing the gradient with respect to the inputs.
+
+        """
+        a_shape, b_shape = ctx.saved_values
+        return zeros(a_shape), zeros(b_shape)
+
+
+class EQ(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
+        """Performs the forward pass of the equal function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the first input tensor to the equal function.
+            b: the second input tensor to the equal function.
+
+        Returns:
+        -------
+            The result of the equal function $a == b$.
+
+        """
+        ctx.save_for_backward(a.shape, b.shape)
+        return a.f.eq_zip(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Performs the backward pass of the equal function.
+
+        Args:
+        ----
+            ctx: context object containing the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containing the gradient with respect to the inputs.
+
+        """
+        a_shape, b_shape = ctx.saved_values
+        return zeros(a_shape), zeros(b_shape)
+
+
+class IsClose(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
+        """Performs the forward pass of the isClose function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the first input tensor to the isClose function.
+            b: the second input tensor to the isClose function.
+
+        Returns:
+        -------
+            The result of the isClose function.
+
+        """
+        return a.f.is_close_zip(a, b)
+
+
+class Permute(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
+        """Performs the forward pass of the permute function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the input tensor to the permute function.
+            order: the new dimensions to pernute the tensor by.
+
+        Returns:
+        -------
+            The result of the permute function.
+
+        """
+        ctx.save_for_backward(order)
+        return a._new(a._tensor.permute(*[int(order[i]) for i in range(order.size)]))
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        """Performs the backward pass of the permute function.
+
+        Args:
+        ----
+            ctx: context object containing the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containing the gradient with respect to the inputs.
+
+        """
+        order: Tensor = ctx.saved_values[0]
+        order2: List[int] = [
+            a[0]
+            for a in sorted(
+                enumerate([order[i] for i in range(order.size)]), key=lambda a: a[1]
+            )
+        ]
+        return grad_output._new(grad_output._tensor.permute(*order2)), 0.0
+
+
+class Sum(Function):
+    @staticmethod
+    def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
+        """Sum along a specified dimension.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the input tensor.
+            dim: the dimension to sum about.
+
+        Returns:
+        -------
+            The result of the exponential function $exp(a)$.
+
+        """
+        ctx.save_for_backward(a.shape, dim)
+        return a.f.add_reduce(a, int(dim.item()))
+
+    @staticmethod
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        """Backward pass for Sum.
+
+        Args:
+        ----
+            ctx: context object containg the saved values from the forward pass.
+            grad_output: the gradient of the output with respect to the final objective.
+
+        Returns:
+        -------
+            A tuple containg the gradient with respect to the input.
+
+        """
+        a_shape, dim = ctx.saved_values
+        return grad_output, 0.0
 
 
 class View(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, shape: Tensor) -> Tensor:
+        """Performs the forward pass of the view function.
+
+        Args:
+        ----
+            ctx: context object to store any values for the backward pass.
+            a: the input tensor to the permute function.
+            shape: the new shape of the tensor.
+
+        Returns:
+        -------
+            The result of the view function.
+
+        """
         ctx.save_for_backward(a.shape)
         assert a._tensor.is_contiguous(), "Must be contiguous to view"
         shape2 = [int(shape[i]) for i in range(shape.size)]
@@ -272,6 +716,25 @@ def tensor(
 def grad_central_difference(
     f: Any, *vals: Tensor, arg: int = 0, epsilon: float = 1e-6, ind: UserIndex
 ) -> float:
+    """Computes the gradient of a function using central difference approximation.
+
+    This method perturbs the specified argument by a small amount (epsilon)
+    in both the positive and negative directions and calculates the
+    approximate derivative.
+
+    Args:
+    ----
+        f: The function for which to compute the gradient.
+        *vals: The input tensors to the function.
+        arg: The index of the argument to perturb. Defaults to 0.
+        epsilon : The small perturbation value. Defaults to 1e-6.
+        ind: The specific index in the argument tensor to perturb.
+
+    Returns:
+    -------
+        float: The estimated gradient of the function with respect to the specified argument.
+
+    """
     x = vals[arg]
     up = zeros(x.shape)
     up[ind] = epsilon

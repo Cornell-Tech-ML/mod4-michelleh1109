@@ -41,9 +41,20 @@ class Conv2d(minitorch.Module):
         self.bias = RParam(out_channels, 1, 1)
 
     def forward(self, input):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        """
+        Perform a 2D convolution.
 
+        Args:
+        ----
+            input : Tensor
+                Input tensor of shape (batch, in_channels, height, width)
+
+        Returns:
+        -------
+            Tensor
+                Output tensor after 2D convolution.
+        """
+        return minitorch.conv2d(input, self.weights.value) + self.bias.value
 
 class Network(minitorch.Module):
     """
@@ -67,13 +78,45 @@ class Network(minitorch.Module):
         self.mid = None
         self.out = None
 
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        # Define layers
+        self.conv1 = Conv2d(1, 4, 3, 3)  # Conv1: 4 output channels, 3x3 kernel
+        self.conv2 = Conv2d(4, 8, 3, 3)  # Conv2: 8 output channels, 3x3 kernel
+        self.linear1 = Linear(392, 64)  # Fully connected layer
+        self.linear2 = Linear(64, C)  # Output layer for classification
 
     def forward(self, x):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        """
+        Forward pass for MNIST classification.
 
+        Args:
+        ----
+            x : Tensor
+                Input tensor of shape (batch, 1, height, width).
+
+        Returns:
+        -------
+            Tensor
+                LogSoftmax probabilities for each class.
+        """
+        # Apply first convolution and ReLU
+        x = self.conv1.forward(x).relu()
+        self.mid = x
+
+        # Apply second convolution and ReLU
+        x = self.conv2.forward(x).relu()
+        self.out = x
+
+        # Apply max pooling
+        pool = minitorch.maxpool2d(x, (4, 4))
+        flattened = pool.view(pool.shape[0], 392)
+
+        # Apply fully connected layer, ReLU, and dropout
+        hidden_l = self.linear1.forward(flattened).relu()
+        hidden_l = minitorch.dropout(x, 0.25)
+
+        # Apply output layer and log softmax
+        class_logits = self.linear2.forward(hidden_l)
+        return minitorch.logsoftmax(class_logits, 1)
 
 def make_mnist(start, stop):
     ys = []
